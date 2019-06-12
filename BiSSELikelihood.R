@@ -28,8 +28,18 @@ exampleTipStates = exampleTree$tip.state
 #
 # Returns:
 #     - An estimation of the likelihood for these data under this model. 
-BiSSELikelihood <- function(rates = exampleRates, tree = exampleTree, tipStates = exampleTipStates) {
+BiSSELikelihood <- function(rates = exampleRates, tree = exampleTree, tipStates = exampleTipStates, illegalReturnValue = NA) {
   names(rates) <- c("lambda0", "lambda1", "mu0", "mu1", "q01", "q10") # names the rates for ease of referencing
+  
+  # Check for illegal states (where a death rate is higher than a birth rate):
+  if (rates[1] <= rates[3] || rates[1] <= rates[4] || rates[2] <= rates[3] || rates[2] <= rates[4]) {
+    return(illegalReturnValue)
+  }
+  
+  # Need transition values higher than 0
+  if (rates[5] == 0 || rates[6] == 0) {
+    return(illegalReturnValue)
+  }
   
   # Set up arrays to hold the DN0(t) and DN1(t) probabilities calculated at each internal node. 
   # These represent the probability of the clade observed downstream of the node being created,  
@@ -172,6 +182,30 @@ diffEquations <- function(time, y, parms) {
            parms["q10"] * E0 + parms["lambda1"] * E1 * E1
   
   return(list(c(dDN0.dt, dDN1.dt, dE0.dt, dE1.dt)))
+}
+
+## Implementation of the BiSSE Likelihood with an underlying Yule model: mu0 = mu1 = 0.0
+#       Rates argument - 4 parameters in order lambda0, lambda1, q01, q10
+bisseYuleLikelihood <- function(rates = c(exampleRates[1:2], exampleRates[5:6]), tree = exampleTree, tipStates = exampleTipStates, illegalReturnValue = NA) {
+  BiSSELikelihood(rates = c(rates[1:2], 0.0, 0.0, rates[3:4]), tree = tree, tipStates = tipStates, illegalReturnValue = illegalReturnValue)
+}
+
+## Implementation of the BiSSE Likelihood with equal birth rates: lambda0 = lambda1
+#       Rates argument - 5 parameters in order lambda, mu0, mu1, q01, q10
+bisseEqualBirthLikelihood <- function(rates = exampleRates[2:6], tree = exampleTree, tipStates = exampleTipStates, illegalReturnValue = NA) {
+  BiSSELikelihood(rates = c(rates[1], rates), tree = tree, tipStates = tipStates, illegalReturnValue = illegalReturnValue)
+}
+
+## Implementation of the BiSSE Likelihood with equal death rates: mu0 = mu1
+#       Rates argument - 5 parameters in order lambda0, lambda1, mu, q01, q10
+bisseEqualDeathLikelihood <- function(rates = c(exampleRates[1:2], exampleRates[3], exampleRates[5:6]), tree = exampleTree, tipStates = exampleTipStates, illegalReturnValue = NA) {
+  BiSSELikelihood(rates = c(rates[1:2], rates[3], rates[3], rates[4:5]), tree = tree, tipStates = tipStates, illegalReturnValue = illegalReturnValue)
+}
+
+## Implementation of the BiSSE Likelihood with equal transition rates: q01 = q10 = q
+#       Rates argument - 5 parameters in order lambda0, lambda1, mu0, mu1, q
+bisseEqualTransitionLikelihood <- function(rates = exampleRates[1:5], tree = exampleTree, tipStates = exampleTipStates, illegalReturnValue = NA) {
+  BiSSELikelihood(rates = c(rates, rates[5]), tree = tree, tipStates = tipStates, illegalReturnValue = illegalReturnValue)
 }
 
 # Uncomment to run with example data on reload
