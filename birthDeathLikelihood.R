@@ -6,7 +6,7 @@
   #  Nee, Sean; May, Robert M.; Harvey, Paul H. (1994). "The reconstructed evolutionary
   #    process." Philosophical Transactions of the Royal Society B, Biological Sciences. 344, 
   #    305-311. doi: 10.1098/rstb.1994.0068
-  # Matzke, N. Gist repository. https://gist.github.com/nmatzke/8bb4f9944f582614deecf8d523e5964b 
+  #  Matzke, N. Gist repository. https://gist.github.com/nmatzke/8bb4f9944f582614deecf8d523e5964b 
 
 # First load packages we'll need
 library(ape)
@@ -30,7 +30,7 @@ birthDeathLikelihood <- function(rates = exampleRates, tree = exampleTree, illeg
   if (rates[1] <= rates[2]) { 
     return(illegalReturnValue)
   }
-  
+
   # Set up our variables
   lambda = rates[1] # birth rate
   mu = rates[2] # death rate
@@ -63,8 +63,18 @@ birthDeathLikelihood <- function(rates = exampleRates, tree = exampleTree, illeg
   txtLnL = paste("\tlnL:", lnL)
   cat(paste(txt, txtLnL, sep = "\n"), "\n\n")
   
-  return(lnL)
+  if (is.finite(lnL)) {
+    return(lnL)  
+  } else {
+    return(-1) # added for optimisation
+  }
 }
+
+## Yule model is the same as the Birth Death model but with a 0 death rate. 
+yuleLikelihood <- function(lambda = exampleRates[1], tree = exampleTree, illegalReturnValue = NA) {
+  return(birthDeathLikelihood(rates = c(lambda, 0.0), tree = tree, illegalReturnValue = illegalReturnValue))
+}
+  
 
 # Uncomment to run with example data on reload
 # birthDeathLikelihood()
